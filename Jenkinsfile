@@ -12,7 +12,7 @@ pipeline{
             }
         }
 
-        # provide permissions to service account
+       
         stage('push image to GAR') {
             steps {
                 echo 'pushing image to GAR...'
