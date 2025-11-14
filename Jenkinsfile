@@ -25,12 +25,13 @@ pipeline{
             }
             steps {
                 echo 'Terraform init and apply...'
-                dir('terraform') {
+                 dir('terraform') {
                  sh ' terraform init .'
                  sh " terraform apply --auto-approve"
                 
                 }
           }
+        }
         stage("destroy") {
             when {
                 expression {params.TERRAFORM_ACTION == 'destroy' }
@@ -54,4 +55,4 @@ pipeline{
         }
     }
 }
-}
+
