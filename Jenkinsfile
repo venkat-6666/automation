@@ -7,7 +7,6 @@ pipeline{
         stage('Build') {
             steps {
                 echo 'Building the dockerfile...'
-                dir
                 sh 'docker build -t python-app .'
             }
         }
