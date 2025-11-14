@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  web:
+    image: YourUserName/flask-redis-app-2
+    environment:
+      - NODE_HOSTNAME=${NODE_HOSTNAME}
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "8000:5000"
+    networks:
+      - app-network
+
+  redis:
+    image: redis:alpine
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+
+volumes:
+  redis-data:
+
+networks:
+  app-network:
+    driver: overlay

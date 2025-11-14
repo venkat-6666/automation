@@ -1,0 +1,37 @@
+---
+- name: Initialize Docker Swarm on manager
+  hosts: manager
+  become: yes
+  tasks:
+    - name: Initialize swarm (only if not already initialized)
+      shell: docker swarm init --advertise-addr {{ ansible_host }}
+      args:
+        creates: /var/lib/docker/swarm
+
+    - name: Get worker join token
+      shell: docker swarm join-token -q worker
+      register: worker_token
+
+    - name: Store join token
+      set_fact:
+        join_token: "{{ worker_token.stdout }}"
+
+- name: Join worker nodes to the swarm
+  hosts: workers
+  become: yes
+  tasks:
+    - name: Join worker to swarm
+      shell: >
+        docker swarm join
+        --token {{ hostvars['manager']['join_token'] }}
+        {{ hostvars['manager']['ansible_host'] }}:2377
+      args:
+        creates: /var/lib/docker/swarm
+
+
+- name: Deploy Docker Stack
+  hosts: manager
+  become: yes
+  tasks:
+    - name: Deploy using stack file
+      shell: docker stack deploy -c /tmp/stack.yml myapp
