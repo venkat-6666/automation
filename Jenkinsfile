@@ -13,6 +13,7 @@ pipeline {
 
         stage('Build') {
             steps {
+                cleanWs()
                 echo 'Building the dockerfile...'
                 sh 'docker build -t python-app .'
             }
