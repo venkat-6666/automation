@@ -1,9 +1,16 @@
-pipeline{
+pipeline {
     agent any
+
     parameters {
         choice(name: 'TERRAFORM_ACTION', choices: ['apply', 'destroy'], description: 'Terraform action to perform')
     }
+
+    // environment {
+    //     PATH = "/usr/local/bin:/usr/bin:/bin:/snap/bin"
+    // }
+
     stages {
+
         stage('Build') {
             steps {
                 echo 'Building the dockerfile...'
@@ -11,43 +18,70 @@ pipeline{
             }
         }
 
-       
-        stage('push image to GAR') {
+        stage('Authenticate to GAR') {
             steps {
-                echo 'pushing image to GAR...'
-                sh "docker tag python-app:latest us-docker.pkg.dev/fifth-medley-478216-a7/docker/python-app:v1"
-                sh "docker push us-docker.pkg.dev/fifth-medley-478216-a7/docker/python-app:v1"
+                echo "Authenticating to Google Artifact Registry..."
+
+                withCredentials([file(credentialsId: 'gar-key', variable: 'GCLOUD_KEY')]) {
+                    sh '''
+                        echo "Activating service account..."
+                        gcloud auth activate-service-account --key-file=$GCLOUD_KEY
+
+                        echo "Configuring Docker authentication for GAR..."
+                        gcloud auth configure-docker us-docker.pkg.dev
+                    '''
+                }
             }
         }
-        stage('Terraform ') {
+
+        stage('Push image to GAR') {
+            steps {
+                echo 'Pushing image to GAR...'
+                sh '''
+                    docker tag python-app:latest us-docker.pkg.dev/fifth-medley-478216-a7/docker/python-app:v1
+                    docker push us-docker.pkg.dev/fifth-medley-478216-a7/docker/python-app:v1
+                '''
+            }
+        }
+
+        stage('Terraform') {
             when {
-                expression {params.TERRAFORM_ACTION == 'apply'}
+                expression { params.TERRAFORM_ACTION == 'apply' }
             }
             steps {
                 echo 'Terraform init and apply...'
-                 dir('terraform') {
-                 sh ' terraform init .'
-                 sh " terraform apply --auto-approve"
-                
+                dir('terraform') {
+                    sh '''
+                        terraform init
+                        terraform apply --auto-approve
+                    '''
                 }
-          }
+            }
         }
-        stage("destroy") {
+
+        stage('Destroy Terraform Resources') {
             when {
-                expression {params.TERRAFORM_ACTION == 'destroy' }
+                expression { params.TERRAFORM_ACTION == 'destroy' }
             }
             steps {
                 echo 'Terraform destroy...'
-                sh  "terraform destroy --auto-approve"
+                dir('terraform') {
+                    sh '''
+                        terraform init
+                        terraform destroy --auto-approve
+                    '''
+                }
             }
         }
-        stage("Ansible") {
+
+        stage('Ansible') {
             steps {
-                echo 'Running ansible playbook...'
+                echo 'Running Ansible playbook...'
                 sh 'ansible-playbook -i inventory.ini playbook.yml'
             }
         }
-        stage("docker swarm") {
+
+        stage('Docker Swarm Deploy') {
             steps {
                 echo 'Deploying to Docker Swarm...'
                 sh 'docker stack deploy -c docker-stack.yml mystack'
@@ -55,4 +89,3 @@ pipeline{
         }
     }
 }
-
