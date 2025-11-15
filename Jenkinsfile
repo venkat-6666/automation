@@ -125,8 +125,8 @@ pipeline {
 manager ansible_host=${managerIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
 
 [workers]
-worker1 ansible_host=${workerIPs[0]} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
-worker2 ansible_host=${workerIPs[1]} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+worker1 ansible_host=${workerIPs[0]} ansible_user=ubuntu ansible_ssh_private_key_file=Terraform/id_rsa
+worker2 ansible_host=${workerIPs[1]} ansible_user=ubuntu ansible_ssh_private_key_file=Terraform/id_rsa
 """
 
                     writeFile file: 'inventory.ini', text: inventory
