@@ -1,54 +1,73 @@
 ---
 ###################################
-# INITIALIZE SWARM ON MANAGER NODE
+# INITIALIZE DOCKER SWARM (ASSUMES DOCKER INSTALLED BY TERRAFORM)
 ###################################
+
 - name: Initialize Docker Swarm on Manager
   hosts: manager
   become: yes
   tasks:
 
-    - name: Leave old swarm if exists
+    - name: Wait for Docker daemon to be ready on manager
+      shell: docker info
+      register: docker_status
+      until: docker_status.rc == 0
+      retries: 30
+      delay: 10
+      changed_when: false
+
+    - name: Leave old swarm if exists (manager)
       shell: docker swarm leave --force
       ignore_errors: yes
 
-    - name: Remove old swarm directory if exists
+    - name: Remove old swarm directory if exists (manager)
       shell: rm -rf /var/lib/docker/swarm
       ignore_errors: yes
 
-    - name: Initialize swarm
+    - name: Initialize swarm on manager
       shell: docker swarm init --advertise-addr {{ ansible_host }}
 
     - name: Get worker join token
       shell: docker swarm join-token -q worker
       register: worker_token
 
-    - name: Save join-token
+    - name: Save join-token to hostvars
       set_fact:
         join_token: "{{ worker_token.stdout }}"
 
 
 #########################################
-# RESET & JOIN WORKERS
+# PREP & JOIN WORKERS
 #########################################
 - name: Join workers to Docker Swarm
   hosts: workers
   become: yes
   tasks:
 
-    - name: Leave old swarm if exists
+    - name: Wait for Docker daemon to be ready on worker
+      shell: docker info
+      register: docker_status
+      until: docker_status.rc == 0
+      retries: 30
+      delay: 10
+      changed_when: false
+
+    - name: Leave old swarm if exists (worker)
       shell: docker swarm leave --force
       ignore_errors: yes
 
-    - name: Remove old swarm directory
+    - name: Remove old swarm directory if exists (worker)
       shell: rm -rf /var/lib/docker/swarm
       ignore_errors: yes
 
-    - name: Join worker to new swarm
+    - name: Join worker to swarm
       shell: docker swarm join --token {{ hostvars['manager']['join_token'] }} {{ hostvars['manager']['ansible_host'] }}:2377
+      args:
+        creates: /var/lib/docker/swarm
 
 
 #########################################
-# CLONE GIT REPO & DEPLOY STACK
+# CLONE REPO & DEPLOY STACK (ON MANAGER)
 #########################################
 - name: Clone Repo & Deploy Stack
   hosts: manager
@@ -60,16 +79,25 @@
     stack_name: "mystack"
   tasks:
 
-    - name: Install git
+    - name: Install git if missing
       apt:
         name: git
         state: present
+        update_cache: yes
 
     - name: Clone or update repository
       git:
         repo: "{{ repo_url }}"
         dest: "{{ repo_path }}"
+        version: main
         force: yes
+
+    - name: Ensure overlay network exists (idempotent)
+      shell: docker network create --driver overlay app-network || true
+      args:
+        warn: false
 
     - name: Deploy Docker stack
       shell: docker stack deploy -c {{ repo_path }}/{{ stack_file }} {{ stack_name }}
+      args:
+        chdir: "{{ repo_path }}"
