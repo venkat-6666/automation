@@ -80,19 +80,81 @@ pipeline {
             }
         }
 
-        stage('Ansible') {
+        /* ------------------------------ *
+         * NEW STAGE: GET TERRAFORM OUTPUTS
+         * ------------------------------ */
+        stage('Get Terraform Outputs') {
+            when {
+                expression { params.TERRAFORM_ACTION == 'apply' }
+            }
             steps {
-                echo 'Running Ansible playbook...'
-                sh 'ansible-playbook -i inventory.ini playbook.yml'
+                script {
+                    echo "Fetching Terraform outputs..."
+
+                    managerIP = sh(script: "cd Terraform && terraform output -raw manager_ip", returnStdout: true).trim()
+                    workerIPs = sh(script: "cd Terraform && terraform output -json worker_ips | jq -r '.[]'", returnStdout: true).trim().split('\n')
+
+                    echo "Manager IP: ${managerIP}"
+                    echo "Worker IPs: ${workerIPs}"
+                }
             }
         }
 
-        stage('Docker Swarm Deploy') {
+        /* -------------------------------------- *
+         * NEW STAGE: AUTO-GENERATE inventory.ini
+         * -------------------------------------- */
+        stage('Generate Dynamic Inventory File') {
+            when {
+                expression { params.TERRAFORM_ACTION == 'apply' }
+            }
             steps {
-                echo 'Deploying to Docker Swarm...'
-                sh 'docker stack deploy -c docker-stack.yml mystack'
+                script {
+                    echo "Generating inventory.ini..."
+
+                    def inventory = """
+[manager]
+manager ansible_host=${managerIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[workers]
+worker1 ansible_host=${workerIPs[0]} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+worker2 ansible_host=${workerIPs[1]} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+"""
+
+                    writeFile file: 'inventory.ini', text: inventory
+
+                    echo "Inventory file created:"
+                    echo inventory
+                }
             }
         }
+
+        /* ------------------------ *
+         * RUN ANSIBLE PLAYBOOK
+         * ------------------------ */
+        stage('Ansible') {
+            when {
+                expression { params.TERRAFORM_ACTION == 'apply' }
+            }
+            steps {
+                echo 'Running Ansible playbook...'
+                sh '''
+                    sudo apt update
+                    sudo apt install -y ansible
+
+                    ansible-playbook -i inventory.ini play.yml
+                '''
+            }
+        }
+
+        // stage('Docker Swarm Deploy') {
+        //     when {
+        //         expression { params.TERRAFORM_ACTION == 'apply' }
+        //     }
+        //     steps {
+        //         echo 'Deploying to Docker Swarm...'
+        //         sh 'docker stack deploy -c docker-stack.yml mystack'
+        //     }
+        // }
 
     }
 }
