@@ -7,44 +7,56 @@
   become: yes
   tasks:
 
-    - name: Initialize swarm (only if not already initialized)
+    - name: Leave old swarm if exists
+      shell: docker swarm leave --force
+      ignore_errors: yes
+
+    - name: Remove old swarm directory if exists
+      shell: rm -rf /var/lib/docker/swarm
+      ignore_errors: yes
+
+    - name: Initialize swarm
       shell: docker swarm init --advertise-addr {{ ansible_host }}
-      args:
-        creates: /var/lib/docker/swarm
 
     - name: Get worker join token
       shell: docker swarm join-token -q worker
       register: worker_token
 
-    - name: Save token to hostvars
+    - name: Save join-token
       set_fact:
         join_token: "{{ worker_token.stdout }}"
 
 
 #########################################
-# JOIN WORKERS TO THE SWARM
+# RESET & JOIN WORKERS
 #########################################
 - name: Join workers to Docker Swarm
   hosts: workers
   become: yes
   tasks:
 
-    - name: Join worker to Swarm
+    - name: Leave old swarm if exists
+      shell: docker swarm leave --force
+      ignore_errors: yes
+
+    - name: Remove old swarm directory
+      shell: rm -rf /var/lib/docker/swarm
+      ignore_errors: yes
+
+    - name: Join worker to new swarm
       shell: docker swarm join --token {{ hostvars['manager']['join_token'] }} {{ hostvars['manager']['ansible_host'] }}:2377
-      args:
-        creates: /var/lib/docker/swarm
 
 
 #########################################
-# CLONE REPO & DEPLOY STACK ON MANAGER
+# CLONE GIT REPO & DEPLOY STACK
 #########################################
-- name: Clone Repo and Deploy Stack
+- name: Clone Repo & Deploy Stack
   hosts: manager
   become: yes
   vars:
-    repo_url: "https://github.com/venkat-6666/docker-swarm.git"   # <-- UPDATED
+    repo_url: "https://github.com/venkat-6666/docker-swarm.git"
     repo_path: "/opt/docker-swarm"
-    stack_file: "docker-stack.yaml"         # <-- your file name
+    stack_file: "docker-stack.yaml"
     stack_name: "mystack"
   tasks:
 
@@ -57,8 +69,7 @@
       git:
         repo: "{{ repo_url }}"
         dest: "{{ repo_path }}"
-        version: main
         force: yes
 
-    - name: Deploy Docker stack using docker-stack.yaml
+    - name: Deploy Docker stack
       shell: docker stack deploy -c {{ repo_path }}/{{ stack_file }} {{ stack_name }}
