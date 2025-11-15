@@ -8,6 +8,9 @@ pipeline {
     stages {
 
         stage('Build') {
+            when {
+                expression { params.TERRAFORM_ACTION == 'apply' }
+            }
             steps {
                 echo 'Building the dockerfile...'
                 sh 'docker build -t python-app .'
@@ -15,6 +18,9 @@ pipeline {
         }
 
         stage('Authenticate to GAR') {
+            when {
+                expression { params.TERRAFORM_ACTION == 'apply' }
+            }
             steps {
                 echo "Authenticating to Google Artifact Registry..."
 
@@ -31,6 +37,9 @@ pipeline {
         }
 
         stage('Push image to GAR') {
+            when {
+                expression { params.TERRAFORM_ACTION == 'apply' }
+            }
             steps {
                 echo 'Pushing image to GAR...'
                 sh 'docker tag python-app:latest us-docker.pkg.dev/fifth-medley-478216-a7/docker/python-app:v1'
