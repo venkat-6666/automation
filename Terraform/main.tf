@@ -64,7 +64,7 @@ resource "google_compute_instance" "manager" {
     ssh-keys = "${var.ssh_user}:${tls_private_key.ssh_key.public_key_openssh}"
   }
   
-   metadata_startup_script = file("${path.module}/docker-script.sh")
+   metadata_startup_script = file("${path.module}/startup-script.sh")
 }
 
 # Two workers
@@ -87,7 +87,7 @@ resource "google_compute_instance" "worker" {
   metadata = {
     ssh-keys = "${var.ssh_user}:${tls_private_key.ssh_key.public_key_openssh}"
   }
-    metadata_startup_script = file("${path.module}/docker-script.sh")
+    metadata_startup_script = file("${path.module}/startup-script.sh")
 }
 
 
