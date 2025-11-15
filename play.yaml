@@ -42,9 +42,9 @@
   hosts: manager
   become: yes
   vars:
-    repo_url: "https://github.com/Mohammedirshaq/docker-swarm.git"
+    repo_url: "https://github.com/venkat-6666/docker-swarm.git"   # <-- UPDATED
     repo_path: "/opt/docker-swarm"
-    stack_file: "docker-stack.yaml"      # <-- UPDATED HERE
+    stack_file: "docker-stack.yaml"         # <-- your file name
     stack_name: "mystack"
   tasks:
 
