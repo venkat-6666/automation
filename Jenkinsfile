@@ -122,7 +122,7 @@ pipeline {
 
                     def inventory = """
 [manager]
-manager ansible_host=${managerIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+manager ansible_host=${managerIP} ansible_user=ubuntu ansible_ssh_private_key_file=Terraform/id_rsa
 
 [workers]
 worker1 ansible_host=${workerIPs[0]} ansible_user=ubuntu ansible_ssh_private_key_file=Terraform/id_rsa
