@@ -5,14 +5,11 @@ pipeline {
         choice(name: 'TERRAFORM_ACTION', choices: ['apply', 'destroy'], description: 'Terraform action to perform')
     }
 
-    // environment {
-    //     PATH = "/usr/local/bin:/usr/bin:/bin:/snap/bin"
-    // }
-
     stages {
 
         stage('Build') {
             steps {
+                cleanWs()
                 echo 'Building the dockerfile...'
                 sh 'docker build -t python-app .'
             }
@@ -37,39 +34,51 @@ pipeline {
         stage('Push image to GAR') {
             steps {
                 echo 'Pushing image to GAR...'
-                sh '''
-                    docker tag python-app:latest us-docker.pkg.dev/fifth-medley-478216-a7/docker/python-app:v1
-                    docker push us-docker.pkg.dev/fifth-medley-478216-a7/docker/python-app:v1
-                '''
+                sh 'docker tag python-app:latest us-docker.pkg.dev/fifth-medley-478216-a7/docker/python-app:v1'
+                sh 'docker push us-docker.pkg.dev/fifth-medley-478216-a7/docker/python-app:v1'
             }
         }
 
-        stage('Terraform') {
+        stage('Terraform Apply') {
             when {
                 expression { params.TERRAFORM_ACTION == 'apply' }
             }
             steps {
-                echo 'Terraform init and apply...'
-                dir('Terraform') {
+                withCredentials([file(credentialsId: 'gar-key', variable: 'GCLOUD_KEY')]) {
                     sh '''
-                        terraform init
-                        terraform apply --auto-approve
+                        echo "Activating service account for Terraform..."
+                        gcloud auth activate-service-account --key-file=$GCLOUD_KEY
+                        export GOOGLE_APPLICATION_CREDENTIALS=$GCLOUD_KEY
                     '''
+
+                    echo 'Running Terraform apply...'
+
+                    dir('Terraform') {
+                        sh 'terraform init'
+                        sh 'terraform apply --auto-approve'
+                    }
                 }
             }
         }
 
-        stage('Destroy Terraform Resources') {
+        stage('Terraform Destroy') {
             when {
                 expression { params.TERRAFORM_ACTION == 'destroy' }
             }
             steps {
-                echo 'Terraform destroy...'
-                dir('terraform') {
+                withCredentials([file(credentialsId: 'gar-key', variable: 'GCLOUD_KEY')]) {
                     sh '''
-                        terraform init
-                        terraform destroy --auto-approve
+                        echo "Activating service account for Terraform..."
+                        gcloud auth activate-service-account --key-file=$GCLOUD_KEY
+                        export GOOGLE_APPLICATION_CREDENTIALS=$GCLOUD_KEY
                     '''
+
+                    echo 'Running Terraform destroy...'
+
+                    dir('Terraform') {
+                        sh 'terraform init'
+                        sh 'terraform destroy --auto-approve'
+                    }
                 }
             }
         }
