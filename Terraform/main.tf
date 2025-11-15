@@ -1,29 +1,29 @@
 provider "google" {
   project = var.project
-  #region  = var.region
-  #zone    = var.zone
+  # region  = var.region
+  # zone    = var.zone
 }
 
-resource "google_compute_network" "vpc" {
-  name = "swarm-vpc"
-  auto_create_subnetworks = false
-}
-resource "google_compute_subnetwork" "subnet" {
-  name          = "swarm-subnet"
-  ip_cidr_range = "10.0.0.0/16"
-  region        = var.region
-  network       = google_compute_network.vpc.name
-}
+# resource "google_compute_network" "vpc" {
+#   name                    = "swarm-vpc"
+#   auto_create_subnetworks = false
+# }
+# resource "google_compute_subnetwork" "subnet" {
+#   name          = "swarm-subnet"
+#   ip_cidr_range = "10.0.0.0/16"
+#   region        = var.region
+#   network       = google_compute_network.vpc.name
+# }
 
-resource "google_compute_firewall" "allow_http_ssh" {
-  name    = "allow-http-ssh"
-  network = google_compute_network.vpc.name
-  allow {
-    protocol = "tcp"
-    ports    = ["22", "80", "8080", "2377", "7946", "4789"]
-  }
-  source_ranges = ["0.0.0.0/0"]
-}
+# resource "google_compute_firewall" "allow_http_ssh" {
+#   name    = "allow-http-ssh"
+#   network = google_compute_network.vpc.name
+#   allow {
+#     protocol = "tcp"
+#     ports    = ["22", "80", "8080", "2377", "7946", "4789"]
+#   }
+#   source_ranges = ["0.0.0.0/0"]
+# }
 
 # SSH Key Generation
 resource "tls_private_key" "ssh_key" {
@@ -32,16 +32,16 @@ resource "tls_private_key" "ssh_key" {
 }
 
 # Save the private and public keys to local files
-resource "local_file" "ansible"{
-    content = tls_private_key.ssh_key.private_key_pem
-    filename = "${path.module}/id_rsa"
+resource "local_file" "ansible" {
+  content  = tls_private_key.ssh_key.private_key_pem
+  filename = "${path.module}/id_rsa"
 }
 
 
 # Save the public key to a local file
-resource "local_file" "ssh_pub_key"{
-    content = tls_private_key.ssh_key.public_key_openssh
-    filename = "${path.module}/id_rsa.pub"
+resource "local_file" "ssh_pub_key" {
+  content  = tls_private_key.ssh_key.public_key_openssh
+  filename = "${path.module}/id_rsa.pub"
 }
 
 # Manager instance
@@ -51,20 +51,20 @@ resource "google_compute_instance" "manager" {
   zone         = var.zone
   tags         = ["swarm-node"]
   boot_disk {
-    initialize_params { 
-        image = "ubuntu-os-cloud/ubuntu-2204-lts" 
-        }
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
+    }
   }
   network_interface {
-    network = google_compute_network.vpc.name
-    subnetwork = google_compute_subnetwork.subnet.name
+    network    = "default"
+    # subnetwork = google_compute_subnetwork.subnet.name
     access_config {}
   }
   metadata = {
     ssh-keys = "${var.ssh_user}:${tls_private_key.ssh_key.public_key_openssh}"
   }
-  
-   metadata_startup_script = file("${path.module}/startup-script.sh")
+
+  metadata_startup_script = file("${path.module}/startup-script.sh")
 }
 
 # Two workers
@@ -75,19 +75,19 @@ resource "google_compute_instance" "worker" {
   zone         = var.zone
   tags         = ["swarm-node"]
   boot_disk {
-    initialize_params { 
-        image = "ubuntu-os-cloud/ubuntu-2204-lts" 
-        }
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
+    }
   }
   network_interface {
-    network = google_compute_network.vpc.name
-    subnetwork = google_compute_subnetwork.subnet.name
+    network    = "default"
+    # subnetwork = google_compute_subnetwork.subnet.name
     access_config {}
   }
   metadata = {
     ssh-keys = "${var.ssh_user}:${tls_private_key.ssh_key.public_key_openssh}"
   }
-    metadata_startup_script = file("${path.module}/startup-script.sh")
+  metadata_startup_script = file("${path.module}/startup-script.sh")
 }
 
 
@@ -107,11 +107,11 @@ resource "google_compute_http_health_check" "swarm_hc" {
 
 # Target Pool and Forwarding Rule
 resource "google_compute_target_pool" "swarm_pool" {
-  name    = "swarm-target-pool"
-  region  = var.region
+  name   = "swarm-target-pool"
+  region = var.region
   instances = concat(
     [google_compute_instance.manager.self_link],
-    [for w in google_compute_instance.worker: w.self_link]
+    [for w in google_compute_instance.worker : w.self_link]
   )
   health_checks = [google_compute_http_health_check.swarm_hc.self_link]
 }
