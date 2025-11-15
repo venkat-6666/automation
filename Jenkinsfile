@@ -147,6 +147,7 @@ worker2 ansible_host=${workerIPs[1]} ansible_user=ubuntu ansible_ssh_private_key
             steps {
                 echo 'Running Ansible playbook...'
                 sh '''
+                   sh 'chmod 600 Terraform/id_rsa'
                    export ANSIBLE_HOST_KEY_CHECKING=False 
                    ansible-playbook -i inventory.ini play.yaml
                 '''
