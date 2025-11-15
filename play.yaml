@@ -94,8 +94,6 @@
 
     - name: Ensure overlay network exists (idempotent)
       shell: docker network create --driver overlay app-network || true
-      args:
-        warn: false
 
     - name: Deploy Docker stack
       shell: docker stack deploy -c {{ repo_path }}/{{ stack_file }} {{ stack_name }}
