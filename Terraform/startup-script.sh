@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 # Update system
 apt-get update -y
@@ -20,16 +20,32 @@ echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
   $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# Install docker
+# Install Docker
 apt-get update -y
 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# Enable and start docker
+# Enable and start Docker service
 systemctl enable docker
 systemctl start docker
 
-# Allow ubuntu user to run docker without sudo
-usermod -aG docker ubuntu
+# Create docker group if not exists
+groupadd docker 2>/dev/null
+
+# Add default GCE user
+DEFAULT_USER=$(whoami)
+usermod -aG docker $DEFAULT_USER
+
+# Also add ubuntu user (GCE often uses this)
+usermod -aG docker ubuntu 2>/dev/null
+
+# Fix socket permissions (correct & secure)
+chown root:docker /var/run/docker.sock 2>/dev/null || true
+chmod 660 /var/run/docker.sock 2>/dev/null || true
+
+# OPTIONAL: Initialize Docker Swarm (only on Manager)
+# Uncomment if this is the Manager node
+# docker swarm init --advertise-addr $(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
+
 
 # ---------------------------
 # Docker Swarm Initialization
