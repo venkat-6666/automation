@@ -139,7 +139,7 @@ worker2 ansible_host=${workerIPs[1]} ansible_user=ubuntu ansible_ssh_private_key
                 echo 'Running Ansible playbook...'
                 sh '''
                    export ANSIBLE_HOST_KEY_CHECKING=False 
-                   ansible-playbook -i inventory.ini play.yaml"
+                   ansible-playbook -i inventory.ini play.yaml
                 '''
             }
         }
