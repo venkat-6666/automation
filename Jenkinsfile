@@ -50,7 +50,7 @@ pipeline {
             }
             steps {
                 echo 'Terraform init and apply...'
-                dir('terraform') {
+                dir('Terraform') {
                     sh '''
                         terraform init
                         terraform apply --auto-approve
