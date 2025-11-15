@@ -141,7 +141,7 @@ worker2 ansible_host=${workerIPs[1]} ansible_user=ubuntu ansible_ssh_private_key
                     sudo apt update
                     sudo apt install -y ansible
 
-                    ansible-playbook -i inventory.ini play.yml
+                    ansible-playbook -i inventory.ini play.yaml
                 '''
             }
         }
