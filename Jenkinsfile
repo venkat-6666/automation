@@ -47,15 +47,14 @@ pipeline {
                     sh '''
                         echo "Activating service account for Terraform..."
                         gcloud auth activate-service-account --key-file=$GCLOUD_KEY
+                        
+                        echo "Setting GOOGLE_APPLICATION_CREDENTIALS..."
                         export GOOGLE_APPLICATION_CREDENTIALS=$GCLOUD_KEY
+
+                        cd Terraform
+                        terraform init
+                        terraform apply --auto-approve
                     '''
-
-                    echo 'Running Terraform apply...'
-
-                    dir('Terraform') {
-                        sh 'terraform init'
-                        sh 'terraform apply --auto-approve'
-                    }
                 }
             }
         }
@@ -69,15 +68,14 @@ pipeline {
                     sh '''
                         echo "Activating service account for Terraform..."
                         gcloud auth activate-service-account --key-file=$GCLOUD_KEY
+                        
+                        echo "Setting GOOGLE_APPLICATION_CREDENTIALS..."
                         export GOOGLE_APPLICATION_CREDENTIALS=$GCLOUD_KEY
+                        
+                        cd Terraform
+                        terraform init
+                        terraform destroy --auto-approve
                     '''
-
-                    echo 'Running Terraform destroy...'
-
-                    dir('Terraform') {
-                        sh 'terraform init'
-                        sh 'terraform destroy --auto-approve'
-                    }
                 }
             }
         }
@@ -95,5 +93,6 @@ pipeline {
                 sh 'docker stack deploy -c docker-stack.yml mystack'
             }
         }
+
     }
 }
