@@ -102,6 +102,7 @@ worker2 ansible_host=${workerIPs[1]} ansible_user=ubuntu ansible_ssh_private_key
         }
 
         stage('Fix Key Permissions') {
+            when { expression { params.TERRAFORM_ACTION == 'apply' } }
             steps {
                 sh 'chmod 600 Terraform/id_rsa'
             }
@@ -111,8 +112,8 @@ worker2 ansible_host=${workerIPs[1]} ansible_user=ubuntu ansible_ssh_private_key
             when { expression { params.TERRAFORM_ACTION == 'apply' } }
             steps {
                 sh '''
-                    sudo apt update
-                    sudo apt install -y ansible
+                    
+                    
 
                     export ANSIBLE_HOST_KEY_CHECKING=False 
                     ansible-playbook -i inventory.ini play.yaml \
