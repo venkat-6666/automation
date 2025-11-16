@@ -101,14 +101,7 @@ resource "google_compute_address" "swarm_lb_ip" {
 }
 
 # Health Check for Swarm Nodes
-resource "google_compute_region_health_check" "swarm_hc" {
-  name   = "swarm-health-check"
-  region = var.region
 
-  tcp_health_check {
-    port = 8000
-  }
-}
 
 
 # Instance Group for Swarm Nodes
@@ -134,9 +127,8 @@ resource "google_compute_health_check" "swarm_hc" {
   healthy_threshold  = 2
   unhealthy_threshold = 2
 
-  http_health_check {
-    port = 80
-    request_path = "/"
+  tcp_health_check {
+    port = 8000
   }
 }
 
@@ -146,15 +138,19 @@ resource "google_compute_backend_service" "swarm_backend" {
   name                  = "swarm-backend"
   protocol              = "TCP"
   load_balancing_scheme = "EXTERNAL"
-  port_name             = "http"
   timeout_sec           = 30
-  health_checks         = [google_compute_health_check.swarm_hc.self_link]
+  port_name             = "http"
+
+  health_checks = [
+    google_compute_health_check.swarm_hc.self_link
+  ]
 
   backend {
-    group           = google_compute_instance_group.swarm_group.self_link
-    balancing_mode  = "CONNECTION"
+    group          = google_compute_instance_group.swarm_group.self_link
+    balancing_mode = "CONNECTION"
   }
 }
+
 
 # Forwarding Rule for Load Balancer Frontend Port 80
 resource "google_compute_forwarding_rule" "swarm_fr" {
@@ -164,10 +160,7 @@ resource "google_compute_forwarding_rule" "swarm_fr" {
   ip_protocol           = "TCP"
   port_range            = "80"
 
-  # Static IP
-  ip_address = google_compute_address.swarm_lb_ip.address
-
-  # Points to backend service
+  ip_address      = google_compute_address.swarm_lb_ip.address
   backend_service = google_compute_backend_service.swarm_backend.self_link
 }
 
