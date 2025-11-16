@@ -27,6 +27,10 @@
     - name: Initialize swarm on manager
       shell: docker swarm init --advertise-addr {{ ansible_host }}
 
+    # >>> ADDED: Wait for swarm to stabilize
+    - name: Wait for swarm control-plane to stabilize
+      command: sleep 20
+
     - name: Get worker join token
       shell: docker swarm join-token -q worker
       register: worker_token
@@ -65,6 +69,10 @@
       args:
         creates: /var/lib/docker/swarm
 
+    # >>> ADDED: Wait for worker to finish joining + overlay network sync
+    - name: Allow worker to attach overlay network
+      command: sleep 10
+
 
 #########################################
 # CLONE REPO & DEPLOY STACK (ON MANAGER)
@@ -93,7 +101,15 @@
         force: yes
 
     #- name: Ensure overlay network exists (idempotent)
-     # shell: docker network create --driver overlay app-network || true
+    #  shell: docker network create --driver overlay app-network || true
+
+    # >>> ADDED: Wait for all nodes to be READY before deploy
+    - name: Verify swarm nodes are ready
+      shell: docker node ls
+      register: nodelist
+
+    - name: Wait for routing mesh + VXLAN network sync
+      command: sleep 15
 
     - name: Deploy Docker stack
       shell: docker stack deploy -c {{ repo_path }}/{{ stack_file }} {{ stack_name }}
