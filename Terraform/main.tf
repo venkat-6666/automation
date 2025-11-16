@@ -52,7 +52,7 @@ resource "google_compute_instance" "manager" {
   tags         = ["swarm-node"]
   boot_disk {
     initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-2204-lts"
+      image = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
     }
   }
   network_interface {
@@ -76,7 +76,7 @@ resource "google_compute_instance" "worker" {
   tags         = ["swarm-node"]
   boot_disk {
     initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-2204-lts"
+      image = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
     }
   }
   network_interface {
