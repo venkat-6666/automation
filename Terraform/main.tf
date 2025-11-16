@@ -101,7 +101,7 @@ resource "google_compute_address" "swarm_lb_ip" {
 }
 
 # Health Check for Swarm Nodes
-resource "google_compute_health_check" "swarm_hc" {
+resource "google_compute_region_health_check" "swarm_hc" {
   name   = "swarm-health-check"
   region = var.region
 
@@ -109,6 +109,7 @@ resource "google_compute_health_check" "swarm_hc" {
     port = 8000
   }
 }
+
 
 # Instance Group for Swarm Nodes
 resource "google_compute_instance_group" "swarm_group" {
