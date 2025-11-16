@@ -127,6 +127,20 @@ resource "google_compute_instance_group" "swarm_group" {
   }
 }
 
+resource "google_compute_health_check" "swarm_hc" {
+  name               = "swarm-health-check"
+  check_interval_sec = 5
+  timeout_sec        = 5
+  healthy_threshold  = 2
+  unhealthy_threshold = 2
+
+  http_health_check {
+    port = 80
+    request_path = "/"
+  }
+}
+
+
 # Backend Service for Load Balancer
 resource "google_compute_backend_service" "swarm_backend" {
   name                  = "swarm-backend"
