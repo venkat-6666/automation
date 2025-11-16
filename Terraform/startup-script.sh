@@ -2,28 +2,50 @@
 
 set -e
 
-echo "====== Updating system ======"
-apt update -y
-apt upgrade -y
+# Update system
+apt-get update -y
 
-echo "====== Installing Docker (docker.io) ======"
-apt install -y docker.io
+# Install dependencies
+apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
 
-echo "====== Enabling & starting Docker ======"
+# Add Docker GPG key
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+chmod a+r /etc/apt/keyrings/docker.gpg
+
+# Add Docker repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker
+apt-get update -y
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Enable and start Docker
 systemctl enable docker
 systemctl start docker
 
-echo "====== Adding current user to docker group ======"
-# Automatically detects the current login user
-CURRENT_USER=$(logname)
-usermod -aG docker $CURRENT_USER
+# Ensure docker group exists (Docker normally creates it)
+groupadd -f docker
 
-echo "====== Fixing docker.sock permission issue ======"
-# Sometimes docker.sock gets reset after reboot or install
-chmod 666 /var/run/docker.sock
+# ----- ADD USERS TO DOCKER GROUP -----
 
-echo "====== Restarting Docker ======"
-systemctl restart docker
+# Add ubuntu user if it exists (common on GCE)
+if id "ubuntu" >/dev/null 2>&1; then
+    usermod -aG docker ubuntu
+fi
 
-echo "====== Docker Installation Completed Successfully ======"
-echo "NOTE: You must log out and login again for group changes to apply."
+# If a user was created via metadata (GCE), add them too
+GCE_USER=$(getent passwd 1000 | cut -d: -f1)
+if [ -n "$GCE_USER" ]; then
+    usermod -aG docker "$GCE_USER"
+fi
+
+# No need to modify root — root already has full access
+
+echo "Docker installation and user setup complete."
