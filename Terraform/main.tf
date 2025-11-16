@@ -92,15 +92,10 @@ resource "google_compute_instance" "worker" {
 
 
 
-
-
-# Static IP for Load Balancer
-resource "google_compute_address" "swarm_lb_ip" {
-  name   = "swarm-lb-ip"
-  region = var.region
+# Static IP for Load Balancer  (CHANGED TO GLOBAL)
+resource "google_compute_global_address" "swarm_lb_ip" {
+  name = "swarm-lb-ip"
 }
-
-# Health Check for Swarm Nodes
 
 
 
@@ -154,18 +149,21 @@ resource "google_compute_backend_service" "swarm_backend" {
 
 
 
-# Forwarding Rule for Load Balancer Frontend Port 80
-resource "google_compute_global_forwarding_rule" "swarm_fr" {
-  name                  = "swarm-forwarding-rule"
-  region                = var.region
-  load_balancing_scheme = "EXTERNAL"
-  ip_protocol           = "TCP"
-  port_range            = "80"
-
-  ip_address      = google_compute_address.swarm_lb_ip.address
+# NEW: Target TCP Proxy (required for global TCP load balancer)
+resource "google_compute_target_tcp_proxy" "swarm_tcp_proxy" {
+  name            = "swarm-tcp-proxy"
   backend_service = google_compute_backend_service.swarm_backend.self_link
 }
 
 
 
+# Forwarding Rule for Load Balancer Frontend Port 80  (FIXED)
+resource "google_compute_global_forwarding_rule" "swarm_fr" {
+  name                  = "swarm-forwarding-rule"
+  load_balancing_scheme = "EXTERNAL"
+  ip_protocol           = "TCP"
+  port_range            = "80"
 
+  ip_address = google_compute_global_address.swarm_lb_ip.address
+  target     = google_compute_target_tcp_proxy.swarm_tcp_proxy.self_link
+}
