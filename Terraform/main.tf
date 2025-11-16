@@ -144,7 +144,6 @@ resource "google_compute_health_check" "swarm_hc" {
 # Backend Service for Load Balancer
 resource "google_compute_backend_service" "swarm_backend" {
   name                  = "swarm-backend"
-  region                = var.region
   protocol              = "TCP"
   load_balancing_scheme = "EXTERNAL"
   port_name             = "http"
