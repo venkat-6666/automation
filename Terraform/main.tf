@@ -155,7 +155,7 @@ resource "google_compute_backend_service" "swarm_backend" {
 
 
 # Forwarding Rule for Load Balancer Frontend Port 80
-resource "google_compute_forwarding_rule" "swarm_fr" {
+resource "google_compute_global_forwarding_rule" "swarm_fr" {
   name                  = "swarm-forwarding-rule"
   region                = var.region
   load_balancing_scheme = "EXTERNAL"
