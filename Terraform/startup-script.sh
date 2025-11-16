@@ -31,9 +31,11 @@ systemctl start docker
 # Create docker group if not exists
 groupadd docker 2>/dev/null
 
+
+
 # Add default GCE user
 DEFAULT_USER=$(whoami)
-usermod -aG docker $DEFAULT_USER
+sudo usermod -aG docker $DEFAULT_USER
 
 # Also add ubuntu user (GCE often uses this)
 usermod -aG docker ubuntu 2>/dev/null
