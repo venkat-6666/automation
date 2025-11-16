@@ -149,6 +149,7 @@ resource "google_compute_backend_service" "swarm_backend" {
   group                         = google_compute_instance_group.swarm_group.self_link
   balancing_mode                = "CONNECTION"
   max_connections_per_instance  = 1000
+ }
 }
 
 
