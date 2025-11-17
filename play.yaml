@@ -60,7 +60,7 @@
       #ignore_errors: yes
 
     - name: Join worker to swarm
-      shell: docker swarm join --token {{ hostvars['manager']['join_token'] }} {{ hostvars['manager']['ansible_host'] }}:2377
+      shell: docker swarm join --token {{ hostvars[groups['manager'][0]].join_token }} {{ hostvars[groups['manager'][0]].ansible_host }}:2377
       args:
         creates: /var/lib/docker/swarm
 
