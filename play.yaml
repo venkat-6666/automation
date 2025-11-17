@@ -14,13 +14,13 @@
       delay: 10
       changed_when: false
 
-    #- name: Leave old swarm if exists (manager)
-     # shell: docker swarm leave --force
-      #ignore_errors: yes
+    - name: Leave old swarm if exists (manager)
+      shell: docker swarm leave --force
+      ignore_errors: yes
 
-    #- name: Remove old swarm directory if exists (manager)
-     # shell: rm -rf /var/lib/docker/swarm
-      #ignore_errors: yes
+    - name: Remove old swarm directory if exists (manager)
+      shell: rm -rf /var/lib/docker/swarm
+      ignore_errors: yes
 
     - name: Initialize swarm on manager
       shell: docker swarm init --advertise-addr {{ ansible_host }}
@@ -55,9 +55,9 @@
       shell: docker swarm leave --force
       ignore_errors: yes
 
-    #- name: Remove old swarm directory if exists (worker)
-     # shell: rm -rf /var/lib/docker/swarm
-      #ignore_errors: yes
+    - name: Remove old swarm directory if exists (worker)
+      shell: rm -rf /var/lib/docker/swarm
+      ignore_errors: yes
 
     - name: Join worker to swarm
       shell: docker swarm join --token {{ hostvars[groups['manager'][0]].join_token }} {{ hostvars[groups['manager'][0]].ansible_host }}:2377
