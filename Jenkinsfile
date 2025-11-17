@@ -70,18 +70,6 @@ pipeline {
             }
         }
 
-        stage('Get Terraform Outputs') {
-            when { expression { params.TERRAFORM_ACTION == 'apply' } }
-            steps {
-                script {
-                    managerIP = sh(script: "cd Terraform && terraform output -raw manager_ip", returnStdout: true).trim()
-                    workerIPs = sh(script: "cd Terraform && terraform output -json worker_ips | jq -r '.[]'", returnStdout: true).trim().split('\n')
-
-                    echo "Manager IP: ${managerIP}"
-                    echo "Worker IPs: ${workerIPs}"
-                }
-            }
-        }
 
 
         stage('Fix Key Permissions') {
@@ -107,10 +95,8 @@ pipeline {
                     
 
                     export ANSIBLE_HOST_KEY_CHECKING=False 
-                    ansible-playbook \
-                      -i inventroy.py \
-                      play.yaml \
-                      --ssh-extra-args="-o StrictHostKeyChecking=no"
+                    ansible-playbook -i inventroy.py play.yaml \
+                        --ssh-extra-args="-o StrictHostKeyChecking=no"
                 '''
             }
         }
