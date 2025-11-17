@@ -4,7 +4,7 @@ import subprocess
 import re
 
 PROJECT_ID = "fifth-medley-478216-a7"
-SSH_KEY_PATH = "/var/lib/jenkins/workspace/test_dev2/Terraform/id_rsa"
+SSH_KEY_PATH = "/var/lib/jenkins/workspace/test_dev3/Terraform/id_rsa"
 
 
 def get_instances():
