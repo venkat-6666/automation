@@ -116,8 +116,10 @@ worker2 ansible_host=${workerIPs[1]} ansible_user=ubuntu ansible_ssh_private_key
                     
 
                     export ANSIBLE_HOST_KEY_CHECKING=False 
-                    ansible-playbook -i inventory.ini play.yaml \
-                        --ssh-extra-args="-o StrictHostKeyChecking=no"
+                    ansible-playbook \
+                      -i /opt/ansible/inventory/gcp_swarm_inventory.py \
+                      /opt/ansible/playbooks/play.yaml \
+                      --ssh-extra-args="-o StrictHostKeyChecking=no"
                 '''
             }
         }
