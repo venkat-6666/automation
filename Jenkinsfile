@@ -70,41 +70,32 @@ pipeline {
             }
         }
 
-        // stage('Get Terraform Outputs') {
-        //     when { expression { params.TERRAFORM_ACTION == 'apply' } }
-        //     steps {
-        //         script {
-        //             managerIP = sh(script: "cd Terraform && terraform output -raw manager_ip", returnStdout: true).trim()
-        //             workerIPs = sh(script: "cd Terraform && terraform output -json worker_ips | jq -r '.[]'", returnStdout: true).trim().split('\n')
+        stage('Get Terraform Outputs') {
+            when { expression { params.TERRAFORM_ACTION == 'apply' } }
+            steps {
+                script {
+                    managerIP = sh(script: "cd Terraform && terraform output -raw manager_ip", returnStdout: true).trim()
+                    workerIPs = sh(script: "cd Terraform && terraform output -json worker_ips | jq -r '.[]'", returnStdout: true).trim().split('\n')
 
-        //             echo "Manager IP: ${managerIP}"
-        //             echo "Worker IPs: ${workerIPs}"
-        //         }
-        //     }
-        // }
+                    echo "Manager IP: ${managerIP}"
+                    echo "Worker IPs: ${workerIPs}"
+                }
+            }
+        }
 
-//         stage('Generate Dynamic Inventory File') {
-//             when { expression { params.TERRAFORM_ACTION == 'apply' } }
-//             steps {
-//                 script {
-//                     def inventory = """
-// [manager]
-// manager ansible_host=${managerIP} ansible_user=venki ansible_ssh_private_key_file=Terraform/id_rsa
-
-// [workers]
-// worker1 ansible_host=${workerIPs[0]} ansible_user=venki ansible_ssh_private_key_file=Terraform/id_rsa
-// worker2 ansible_host=${workerIPs[1]} ansible_user=venki ansible_ssh_private_key_file=Terraform/id_rsa
-// """
-
-//                     writeFile file: 'inventory.ini', text: inventory
-//                 }
-//             }
-//         }
 
         stage('Fix Key Permissions') {
             when { expression { params.TERRAFORM_ACTION == 'apply' } }
             steps {
                 sh 'chmod 600 Terraform/id_rsa'
+            }
+        }
+
+        stage('Generate Dynamic Inventory File') {
+            when { expression { params.TERRAFORM_ACTION == 'apply' } }
+            steps {
+                
+                sh " chmod +x inventroy.py"
             }
         }
 
@@ -116,10 +107,8 @@ pipeline {
                     
 
                     export ANSIBLE_HOST_KEY_CHECKING=False 
-                    ansible-playbook \
-                      -i /opt/ansible/inventory/gcp_swarm_inventory.py \
-                      play.yaml \
-                      --ssh-extra-args="-o StrictHostKeyChecking=no"
+                    ansible-playbook -i inventory.ini play.yaml \
+                        --ssh-extra-args="-o StrictHostKeyChecking=no"
                 '''
             }
         }
