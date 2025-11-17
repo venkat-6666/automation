@@ -117,7 +117,7 @@ pipeline {
 
                     export ANSIBLE_HOST_KEY_CHECKING=False 
                     ansible-playbook \
-                      -i /opt/ansible/inventory/gcp_swarm_inventory.py \
+                      -i inventroy.py \
                       play.yaml \
                       --ssh-extra-args="-o StrictHostKeyChecking=no"
                 '''
