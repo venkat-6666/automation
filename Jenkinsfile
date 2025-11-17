@@ -107,8 +107,10 @@ pipeline {
                     
 
                     export ANSIBLE_HOST_KEY_CHECKING=False 
-                    ansible-playbook -i inventory.ini play.yaml \
-                        --ssh-extra-args="-o StrictHostKeyChecking=no"
+                    ansible-playbook \
+                      -i inventroy.py \
+                      play.yaml \
+                      --ssh-extra-args="-o StrictHostKeyChecking=no"
                 '''
             }
         }
