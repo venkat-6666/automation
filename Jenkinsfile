@@ -83,7 +83,7 @@ pipeline {
             when { expression { params.TERRAFORM_ACTION == 'apply' } }
             steps {
                 
-                sh " chmod +x inventroy.py"
+                sh " chmod +x inventory.py"
             }
         }
 
